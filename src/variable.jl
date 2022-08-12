@@ -291,3 +291,35 @@ function set_selection(variable::Variable,
     Error(err) ≠ error_none && return nothing
     return ()
 end
+
+export set_shape
+"""
+    set_shape(variable::Variable, shape::Union{NTuple{N,Integer} where N, CartesianIndex})
+
+    Set the shape of the variable for writing if define_variable was called with constant_dims = false.
+"""
+function set_shape(variable::Variable, shape::Union{NTuple{N,Integer} where N, CartesianIndex})
+
+    @assert all(shape .> 0)
+    ndims = length(shape)
+
+    err = ccall((:adios2_set_shape, libadios2_c), Cint,
+            (Ptr{Cvoid}, Csize_t, Ptr{Csize_t}),
+             variable.ptr, ndims, Csize_t[reverse(Tuple(start))...])
+
+    Error(err) ≠ error_none && return nothing
+    return ()
+end
+
+export set_step_selection
+"""
+    set_step_selection(variable::Variable, step_start::Int, step_count::Int)
+
+    Set the step start and count for the variable
+"""
+function set_step_selection(variable::Variable, step_start::Int, step_count::Int)
+    err = ccall((:adios2_set_block_selection, libadios2_c), Cint,
+            (Ptr{Cvoid}, Csize_t, Csize_t), variable.ptr, step_start, step_count)
+    Error(err) ≠ error_none && return nothing
+
+end
