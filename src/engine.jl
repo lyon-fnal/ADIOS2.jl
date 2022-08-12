@@ -115,7 +115,7 @@ function current_step(engine::Engine)
     err = ccall((:adios2_current_step, libadios2_c), Cint,
                 (Ptr{Csize_t}, Ptr{Cvoid}), step, engine.ptr)
     Error(err) ≠ error_none && return nothing
-    return Int(step)
+    return Int(step[])
 end
 
 export steps
