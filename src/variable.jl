@@ -280,6 +280,8 @@ function set_selection(variable::Variable,
                        count::Union{NTuple{N,Integer} where N, CartesianIndex} )
 
     @assert length(start) == length(count)
+    @assert all(start .>= 0)
+    @assert all(count .> 0)
     ndims = length(start)
 
     err = ccall((:adios2_set_selection, libadios2_c), Cint,
