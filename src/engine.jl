@@ -173,6 +173,20 @@ function perform_puts!(engine::Engine)
     return Error(err)
 end
 
+export perform_data_write!
+"""
+    perform_data_write!(engine::Engine)
+
+Execute all currently scheduled write operations and then clear the ADIOS buffers. Useful
+if memory is an issue. 
+"""
+function perform_data_write!(engine::Engine)
+    err = ccall((:adios2_peform_data_write, libadios2_c), Cint, (Ptr{Cvoid},),
+                engine.ptr)
+    empty!(engine.put_sources)
+    return Error(err)
+end
+
 """
     err = Base.get(engine::Engine, variable::Variable,
                    data::Union{Ref,Array,Ptr}, launch::Mode=mode_deferred)
