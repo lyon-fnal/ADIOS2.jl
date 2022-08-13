@@ -305,7 +305,7 @@ function set_shape(variable::Variable, shape::Union{NTuple{N,Integer} where N, C
 
     err = ccall((:adios2_set_shape, libadios2_c), Cint,
             (Ptr{Cvoid}, Csize_t, Ptr{Csize_t}),
-             variable.ptr, ndims, Csize_t[reverse(Tuple(start))...])
+             variable.ptr, ndims, Csize_t[reverse(Tuple(shape))...])
 
     Error(err) ≠ error_none && return nothing
     return ()
