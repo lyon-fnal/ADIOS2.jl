@@ -135,20 +135,32 @@ end
 
 """
     err = Base.put!(engine::Engine, variable::Variable,
-                    data::Union{Ref,Array,Ptr}, launch::Mode=mode_deferred)
+                    data::Union{Ref,DenseArray,SubArray,Ptr},
+                    launch::Mode=mode_deferred)
     err = Base.put!(engine::Engine, variable::Variable, data::AdiosType,
                     launch::Mode=mode_deferred)
     err::Error
 
-Schedule writing a variable to file. Call `perform_puts!` to perform
-the actual write operations.
+Schedule writing a variable to file. The buffer `data` must be
+contiguous in memory.
+
+Call `perform_puts!` to perform the actual write operations.
 
 The reference/array/pointer target must not be modified before
 `perform_puts!` is called. It is most efficenty to schedule multiple
 `put!` operations before calling `perform_puts!`.
 """
 function Base.put!(engine::Engine, variable::Variable,
-                   data::Union{Ref,Array,Ptr}, launch::Mode=mode_deferred)
+                   data::Union{Ref,DenseArray,SubArray,Ptr},
+                   launch::Mode=mode_deferred)
+    if data isa AbstractArray && length(data) ≠ 0
+        np = 1
+        for (str, sz) in zip(strides(data), size(data))
+            str ≠ np &&
+                throw(ArgumentError("ADIOS2: `data` argument to `put!` must be contiguous"))
+            np *= sz
+        end
+    end
     push!(engine.put_sources, data)
     err = ccall((:adios2_put, libadios2_c), Cint,
                 (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Cint), engine.ptr,
@@ -189,10 +201,13 @@ end
 
 """
     err = Base.get(engine::Engine, variable::Variable,
-                   data::Union{Ref,Array,Ptr}, launch::Mode=mode_deferred)
+                   data::Union{Ref,DenseArray,SubArray,Ptr},
+                   launch::Mode=mode_deferred)
     err::Error
 
 Schedule reading a variable from file into the provided buffer `data`.
+`data` must be contiguous in memory.
+
 Call `perform_gets` to perform the actual read operations.
 
 The reference/array/pointer target must not be modified before
@@ -200,7 +215,16 @@ The reference/array/pointer target must not be modified before
 `get` operations before calling `perform_gets`.
 """
 function Base.get(engine::Engine, variable::Variable,
-                  data::Union{Ref,Array,Ptr}, launch::Mode=mode_deferred)
+                  data::Union{Ref,DenseArray,SubArray,Ptr},
+                  launch::Mode=mode_deferred)
+    if data isa AbstractArray && length(data) ≠ 0
+        np = 1
+        for (str, sz) in zip(strides(data), size(data))
+            str ≠ np &&
+                throw(ArgumentError("ADIOS2: `data` argument to `get` must be contiguous"))
+            np *= sz
+        end
+    end
     push!(engine.get_targets, data)
     T = type(variable)
     if T ≡ String
